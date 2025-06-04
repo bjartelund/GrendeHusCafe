@@ -1,0 +1,101 @@
+@page "/products"
+
+@using Context
+@inject Context.CafeContext CafeContext
+
+<PageTitle>Products</PageTitle>
+
+<h1>Products</h1>
+
+@if (products == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Description</td>
+                    <td>@product.Price.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => AddToCart(product)">Add to Cart</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Cart</h2>
+@if (cart.Count == 0)
+{
+    <p>Your cart is empty.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in cart)
+            {
+                <tr>
+                    <td>@item.Product.Name</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.Product.Price.ToString("C")</td>
+                    <td>@(item.Product.Price * item.Quantity).ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <h3>Total: @TotalSum.ToString("C")</h3>
+}
+
+@code {
+    private List<Product> products;
+    private List<CartItem> cart = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = CafeContext.Products.ToList();
+    }
+
+    void AddToCart(Product product)
+    {
+        var item = cart.FirstOrDefault(ci => ci.Product.Id == product.Id);
+        if (item != null)
+        {
+            item.Quantity++;
+        }
+        else
+        {
+            cart.Add(new CartItem { Product = product, Quantity = 1 });
+        }
+    }
+
+    decimal TotalSum => cart.Sum(ci => ci.Product.Price * ci.Quantity);
+
+    class CartItem
+    {
+        public Product Product { get; set; }
+        public int Quantity { get; set; }
+    }
+}

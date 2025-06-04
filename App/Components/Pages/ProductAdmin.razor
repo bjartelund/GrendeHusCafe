@@ -1,0 +1,49 @@
+@page "/product-admin"
+
+@using Context
+@inject Context.CafeContext CafeContext
+
+<PageTitle>Product Admin</PageTitle>
+
+<h1>Product Admin</h1>
+
+<EditForm Model="newProduct" OnValidSubmit="AddProduct">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label>Name</label>
+        <InputText class="form-control" @bind-Value="newProduct.Name" />
+    </div>
+    <div class="mb-3">
+        <label>Description</label>
+        <InputText class="form-control" @bind-Value="newProduct.Description" />
+    </div>
+    <div class="mb-3">
+        <label>Price</label>
+        <InputNumber class="form-control" @bind-Value="newProduct.Price" />
+    </div>
+    <div class="mb-3">
+        <label>Available</label>
+        <InputCheckbox class="form-check-input" @bind-Value="newProduct.Available" />
+    </div>
+    <button type="submit" class="btn btn-success">Add Product</button>
+</EditForm>
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@code {
+    private Product newProduct = new() { Name = string.Empty, Description = string.Empty };
+    private string? successMessage;
+
+    private async Task AddProduct()
+    {
+        CafeContext.Products.Add(newProduct);
+        await CafeContext.SaveChangesAsync();
+        successMessage = $"Product '{newProduct.Name}' added!";
+        newProduct = new() { Name = string.Empty, Description = string.Empty };
+        StateHasChanged();
+    }
+}

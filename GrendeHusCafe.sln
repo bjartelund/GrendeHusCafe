@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrendeHusCafeAppHost1", "GrendeHusCafeAppHost1\GrendeHusCafeAppHost1.csproj", "{80DB8554-816A-4399-98BD-1CCFAB7B90FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "App\App.csproj", "{297D0FA8-139E-48FF-B250-D5A4ABE81AEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Context", "Context\Context.csproj", "{18FA8143-FB57-407B-B530-E4491B62362D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigrationService", "MigrationService\MigrationService.csproj", "{258CAFD7-89FA-43A2-9DC9-8F264D6108A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{80DB8554-816A-4399-98BD-1CCFAB7B90FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80DB8554-816A-4399-98BD-1CCFAB7B90FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80DB8554-816A-4399-98BD-1CCFAB7B90FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80DB8554-816A-4399-98BD-1CCFAB7B90FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{297D0FA8-139E-48FF-B250-D5A4ABE81AEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{297D0FA8-139E-48FF-B250-D5A4ABE81AEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{297D0FA8-139E-48FF-B250-D5A4ABE81AEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{297D0FA8-139E-48FF-B250-D5A4ABE81AEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18FA8143-FB57-407B-B530-E4491B62362D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18FA8143-FB57-407B-B530-E4491B62362D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18FA8143-FB57-407B-B530-E4491B62362D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18FA8143-FB57-407B-B530-E4491B62362D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{258CAFD7-89FA-43A2-9DC9-8F264D6108A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{258CAFD7-89FA-43A2-9DC9-8F264D6108A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{258CAFD7-89FA-43A2-9DC9-8F264D6108A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{258CAFD7-89FA-43A2-9DC9-8F264D6108A3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
