@@ -1,0 +1,73 @@
+@page "/orders"
+
+@using Context
+@inject Context.CafeContext CafeContext
+
+<PageTitle>Orders</PageTitle>
+
+<h1>Orders</h1>
+
+@if (orders == null)
+{
+    <p>Loading...</p>
+}
+else if (!orders.Any())
+{
+    <p>No orders found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.CreatedAt.ToString("g")</td>
+                    <td>@order.Status</td>
+                    <td>
+                        <ul>
+                            @foreach (var item in order.Items)
+                            {
+                                <li>@item.Product?.Name x @item.Quantity (@item.UnitPrice.ToString("C"))</li>
+                            }
+                        </ul>
+                    </td>
+                    <td>@order.Items.Sum(i => i.UnitPrice * i.Quantity).ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Order> orders;
+
+    protected override void OnInitialized()
+    {
+        orders = CafeContext.Orders
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new Order
+            {
+                Id = o.Id,
+                CreatedAt = o.CreatedAt,
+                Status = o.Status,
+                Items = o.Items.Select(i => new OrderItem
+                {
+                    Product = i.Product,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
+            })
+            .ToList();
+    }
+}

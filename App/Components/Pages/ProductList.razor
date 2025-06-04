@@ -67,6 +67,8 @@ else
         </tbody>
     </table>
     <h3>Total: @TotalSum.ToString("C")</h3>
+    <button class="btn btn-success" @onclick="SubmitOrder">Submit Order</button>
+    <button class="btn btn-danger" @onclick="ResetCart">Reset Cart</button>
 }
 
 @code {
@@ -89,6 +91,32 @@ else
         {
             cart.Add(new CartItem { Product = product, Quantity = 1 });
         }
+    }
+
+    void SubmitOrder()
+    {
+        if (cart.Count == 0)
+            return;
+
+        var order = new Order
+        {
+            CreatedAt = DateTime.UtcNow,
+            Status = "Submitted",
+            Items = cart.Select(ci => new OrderItem
+            {
+                ProductId = ci.Product.Id,
+                Quantity = ci.Quantity,
+                UnitPrice = ci.Product.Price
+            }).ToList()
+        };
+        CafeContext.Orders.Add(order);
+        CafeContext.SaveChanges();
+        cart.Clear();
+    }
+
+    void ResetCart()
+    {
+        cart.Clear();
     }
 
     decimal TotalSum => cart.Sum(ci => ci.Product.Price * ci.Quantity);
