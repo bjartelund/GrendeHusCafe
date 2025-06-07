@@ -1,6 +1,10 @@
 @page "/orders"
-
+@attribute [Authorize]
 @using Context
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject Context.CafeContext CafeContext
 
 <PageTitle>Orders</PageTitle>
@@ -50,24 +54,25 @@ else
 }
 
 @code {
-    private List<Order> orders;
+    private List<Order>? orders;
+    private string? userObjectId;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        orders = CafeContext.Orders
-            .OrderByDescending(o => o.CreatedAt)
-            .Select(o => new Order
-            {
-                Id = o.Id,
-                CreatedAt = o.CreatedAt,
-                Status = o.Status,
-                Items = o.Items.Select(i => new OrderItem
-                {
-                    Product = i.Product,
-                    Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice
-                }).ToList()
-            })
-            .ToList();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        if (Guid.TryParse(userObjectId, out var userGuid))
+        {
+            orders = await CafeContext.Orders
+                .Where(o => o.UserId == userGuid)
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .ToListAsync();
+        }
+        else
+        {
+            orders = new List<Order>();
+        }
     }
 }

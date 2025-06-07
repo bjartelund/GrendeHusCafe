@@ -12,4 +12,5 @@ public class Product
 
     public decimal Price { get; set; }
     public bool Available { get; set; }
+    public Guid UserId { get; set; }
 }

@@ -1,7 +1,10 @@
 @page "/product-admin"
-
+@attribute [Authorize]
 @using Context
-@inject Context.CafeContext CafeContext
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CafeContext CafeContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Product Admin</PageTitle>
 
@@ -37,13 +40,29 @@
 @code {
     private Product newProduct = new() { Name = string.Empty, Description = string.Empty };
     private string? successMessage;
+    private string? userObjectId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+    }
 
     private async Task AddProduct()
     {
-        CafeContext.Products.Add(newProduct);
-        await CafeContext.SaveChangesAsync();
-        successMessage = $"Product '{newProduct.Name}' added!";
-        newProduct = new() { Name = string.Empty, Description = string.Empty };
-        StateHasChanged();
+        if (Guid.TryParse(userObjectId, out var userGuid))
+        {
+            newProduct.UserId = userGuid;
+            CafeContext.Products.Add(newProduct);
+            await CafeContext.SaveChangesAsync();
+            successMessage = $"Product '{newProduct.Name}' added!";
+            newProduct = new() { Name = string.Empty, Description = string.Empty };
+            StateHasChanged();
+        }
+        else
+        {
+            successMessage = "Could not determine user ID. Product was not saved.";
+        }
     }
 }

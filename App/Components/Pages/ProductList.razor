@@ -1,7 +1,11 @@
 @page "/products"
-
+@attribute [Authorize]
 @using Context
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
 @inject Context.CafeContext CafeContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Products</PageTitle>
 
@@ -72,12 +76,23 @@ else
 }
 
 @code {
-    private List<Product> products;
-    private List<CartItem> cart = new();
+    private List<Product>? products;
+    private readonly List<CartItem> cart = [];
+    private string? userObjectId;
 
     protected override async Task OnInitializedAsync()
     {
-        products = CafeContext.Products.ToList();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        if (Guid.TryParse(userObjectId, out var userGuid))
+        {
+            products = await CafeContext.Products.Where(p => p.UserId == userGuid).ToListAsync();
+        }
+        else
+        {
+            products = new List<Product>();
+        }
     }
 
     void AddToCart(Product product)
@@ -98,10 +113,17 @@ else
         if (cart.Count == 0)
             return;
 
+        if (!Guid.TryParse(userObjectId, out var userGuid))
+        {
+            // Optionally, show an error message or return
+            return;
+        }
+
         var order = new Order
         {
             CreatedAt = DateTime.UtcNow,
             Status = "Submitted",
+            UserId = userGuid,
             Items = cart.Select(ci => new OrderItem
             {
                 ProductId = ci.Product.Id,
