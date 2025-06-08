@@ -2,8 +2,7 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var sql = builder.AddSqlServer("grendehus-cafe-sql-server")
-    .WithLifetime(ContainerLifetime.Persistent);
+var sql = builder.AddAzureSqlServer("grendehus-cafe-sql-server");
 
 var db = sql.AddDatabase("grendehus-cafe-db");
 
