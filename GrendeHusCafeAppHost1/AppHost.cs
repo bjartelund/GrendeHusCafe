@@ -7,11 +7,11 @@ var sql = builder.AddSqlServer("grendehus-cafe-sql-server")
 
 var db = sql.AddDatabase("grendehus-cafe-db");
 
-builder.AddProject<MigrationService>("GrendeHusCafeMigrationService")
+builder.AddProject<MigrationService>("grendehus-cafe-migrations")
     .WithReference(db)
     .WaitFor(db);
 
-builder.AddProject<App>("GrendeHusCafeApp")
+builder.AddProject<App>("grendehus-cafe-app")
     .WithReference(db).WaitFor(db);
 
 builder.Build().Run();
