@@ -16,7 +16,7 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = options.DefaultPolicy;
 });
 
-builder.AddSqlServerDbContext<CafeContext>(connectionName: "grendehus-cafe-db");
+builder.AddSqlServerDbContext<CafeContext>(connectionName: "grendehus-cafe-sql-server");
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
