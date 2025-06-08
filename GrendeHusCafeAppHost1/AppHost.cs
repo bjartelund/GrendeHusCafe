@@ -13,4 +13,5 @@ builder.AddProject<MigrationService>("grendehus-cafe-migrations")
 builder.AddProject<App>("grendehus-cafe-app")
     .WithReference(db).WaitFor(db).WithExternalHttpEndpoints();
 
-builder.Build().Run();
+builder.Build()
+    .Run();
