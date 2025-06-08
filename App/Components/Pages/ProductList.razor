@@ -4,7 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Authorization
-@inject Context.CafeContext CafeContext
+@inject CafeContext CafeContext
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Products</PageTitle>
@@ -65,7 +65,7 @@ else
                     <td>@item.Product.Name</td>
                     <td>@item.Quantity</td>
                     <td>@item.Product.Price.ToString("C")</td>
-                    <td>@(item.Product.Price * item.Quantity).ToString("C")</td>
+                    <td>@($"{item.Product.Price * item.Quantity:C}")</td>
                 </tr>
             }
         </tbody>
