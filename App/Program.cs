@@ -1,11 +1,12 @@
-using App.Components;
 using Context;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.UI;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("nb-NO");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("nb-NO");
 
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
