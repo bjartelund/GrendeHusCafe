@@ -6,3 +6,4 @@ services:
     language: dotnet
     project: ./GrendeHusCafeAppHost1/GrendeHusCafeAppHost1.csproj
     host: containerapp
+    name: grendehuscafeapp
