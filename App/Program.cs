@@ -25,6 +25,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddServerSideBlazor()
     .AddMicrosoftIdentityConsentHandler();
 
+// Add service defaults (resilience, health checks, telemetry, etc.)
+builder.AddServiceDefaults();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
