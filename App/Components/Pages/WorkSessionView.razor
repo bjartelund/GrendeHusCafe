@@ -1,0 +1,101 @@
+@page "/worksession"
+@using Context
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager Navigation
+@inject CafeContext Db
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Add Work Session</h3>
+
+<EditForm Model="workSession" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label>Start Time:</label>
+        <input type="datetime-local" class="form-control" @bind="workSession.StartTime" />
+    </div>
+    <div class="mb-3">
+        <label>End Time:</label>
+        <input type="datetime-local" class="form-control" @bind="workSession.EndTime" />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Work Session</button>
+</EditForm>
+
+@if (userSessions != null && userSessions.Count > 0)
+{
+    <h4>Previous Work Sessions</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var session in userSessions)
+            {
+                <tr>
+                    <td>@session.StartTime.ToString("g")</td>
+                    <td>@session.EndTime.ToString("g")</td>
+                    <td>@GetSessionHours(session.StartTime, session.EndTime).ToString("F2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private WorkSession workSession = new WorkSession
+    {
+        StartTime = DateTime.Today.AddHours(11),
+        EndTime = DateTime.Today.AddHours(14)
+    };
+    private List<WorkSession> userSessions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var objectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        if (!string.IsNullOrWhiteSpace(objectId))
+        {
+            workSession.UserId = objectId;
+        }
+        await LoadUserSessions();
+    }
+
+    private async Task OnUserIdChanged(ChangeEventArgs e)
+    {
+        workSession.UserId = e.Value?.ToString() ?? string.Empty;
+        await LoadUserSessions();
+    }
+
+    private async Task LoadUserSessions()
+    {
+        if (!string.IsNullOrWhiteSpace(workSession.UserId))
+        {
+            userSessions = await Db.WorkSessions
+                .Where(ws => ws.UserId == workSession.UserId)
+                .OrderByDescending(ws => ws.StartTime)
+                .ToListAsync();
+        }
+        else
+        {
+            userSessions = new();
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Db.WorkSessions.Add(workSession);
+        await Db.SaveChangesAsync();
+        await LoadUserSessions();
+    }
+
+    private double GetSessionHours(DateTime start, DateTime end)
+    {
+        return (end - start).TotalHours;
+    }
+}
