@@ -82,12 +82,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        userObjectId = await AuthHelper.GetUserId(AuthenticationStateProvider.GetAuthenticationStateAsync());
         if (Guid.TryParse(userObjectId, out var userGuid))
         {
-            products = await CafeContext.Products.Where(p => p.UserId == userGuid).ToListAsync();
+            products = await CafeContext.Products.Where(p => p.UserId == userGuid).Where(p=>p.Available).ToListAsync();
         }
         else
         {
@@ -145,7 +143,7 @@ else
 
     class CartItem
     {
-        public Product Product { get; set; }
+        public required Product Product { get; set; }
         public int Quantity { get; set; }
     }
 }

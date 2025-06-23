@@ -29,6 +29,7 @@ else
                 <th>Status</th>
                 <th>Items</th>
                 <th>Total</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -47,6 +48,9 @@ else
                         </ul>
                     </td>
                     <td>@order.Items.Sum(i => i.UnitPrice * i.Quantity).ToString("C")</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteOrder(order.Id)">Cancel</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -59,9 +63,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        userObjectId = await AuthHelper.GetUserId(AuthenticationStateProvider.GetAuthenticationStateAsync());
         if (Guid.TryParse(userObjectId, out var userGuid))
         {
             orders = await CafeContext.Orders
@@ -73,6 +80,18 @@ else
         else
         {
             orders = new List<Order>();
+        }
+    }
+
+    private async Task DeleteOrder(int orderId)
+    {
+        var order = await CafeContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order != null)
+        {
+            CafeContext.OrderItems.RemoveRange(order.Items);
+            CafeContext.Orders.Remove(order);
+            await CafeContext.SaveChangesAsync();
+            await LoadOrders();
         }
     }
 }

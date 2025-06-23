@@ -55,9 +55,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var objectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        var objectId = await AuthHelper.GetUserId(AuthenticationStateProvider.GetAuthenticationStateAsync());
         if (!string.IsNullOrWhiteSpace(objectId))
         {
             workSession.UserId = objectId;

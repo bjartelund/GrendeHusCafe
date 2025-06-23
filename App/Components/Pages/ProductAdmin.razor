@@ -3,6 +3,7 @@
 @using Context
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
 @inject CafeContext CafeContext
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -37,16 +38,63 @@
     <div class="alert alert-success">@successMessage</div>
 }
 
+@if (products is { Count: > 0 })
+{
+    <h2>Your Products</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Available</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Description</td>
+                    <td>@product.Price.ToString("C")</td>
+                    <td>@(product.Available ? "Yes" : "No")</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => ToggleAvailability(product)">
+                            @(product.Available ? "Inactivate" : "Activate")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 @code {
     private Product newProduct = new() { Name = string.Empty, Description = string.Empty };
     private string? successMessage;
     private string? userObjectId;
+    private List<Product>? products;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        userObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+
+        userObjectId   = await AuthHelper.GetUserId(AuthenticationStateProvider.GetAuthenticationStateAsync());
+
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        if (Guid.TryParse(userObjectId, out var userGuid))
+        {
+            products = await CafeContext.Products.Where(p => p.UserId == userGuid).ToListAsync();
+        }
+        else
+        {
+            products = new List<Product>();
+        }
+        StateHasChanged();
     }
 
     private async Task AddProduct()
@@ -58,11 +106,19 @@
             await CafeContext.SaveChangesAsync();
             successMessage = $"Product '{newProduct.Name}' added!";
             newProduct = new() { Name = string.Empty, Description = string.Empty };
-            StateHasChanged();
+            await LoadProducts();
         }
         else
         {
             successMessage = "Could not determine user ID. Product was not saved.";
         }
+    }
+
+    private async Task ToggleAvailability(Product product)
+    {
+        product.Available = !product.Available;
+        CafeContext.Products.Update(product);
+        await CafeContext.SaveChangesAsync();
+        await LoadProducts();
     }
 }

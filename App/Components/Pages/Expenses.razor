@@ -2,6 +2,7 @@
 <h3>Expenses</h3>
 
 @using Context
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject CafeContext Db
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
@@ -57,9 +58,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var objectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        var objectId = await AuthHelper.GetUserId(AuthenticationStateProvider.GetAuthenticationStateAsync());
+
         if (!string.IsNullOrWhiteSpace(objectId))
         {
             expense.UserId = objectId;
