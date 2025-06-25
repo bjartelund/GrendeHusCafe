@@ -1,7 +1,6 @@
 @page "/worksession"
 @using Context
 @using Microsoft.EntityFrameworkCore
-@inject NavigationManager Navigation
 @inject CafeContext Db
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 
@@ -21,7 +20,7 @@
     <button type="submit" class="btn btn-primary">Add Work Session</button>
 </EditForm>
 
-@if (userSessions != null && userSessions.Count > 0)
+@if (userSessions.Count > 0)
 {
     <h4>Previous Work Sessions</h4>
     <table class="table">
@@ -30,6 +29,7 @@
                 <th>Start Time</th>
                 <th>End Time</th>
                 <th>Hours</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -39,6 +39,9 @@
                     <td>@session.StartTime.ToString("g")</td>
                     <td>@session.EndTime.ToString("g")</td>
                     <td>@GetSessionHours(session.StartTime, session.EndTime).ToString("F2")</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteSession(session.Id)">Delete</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -46,7 +49,7 @@
 }
 
 @code {
-    private WorkSession workSession = new WorkSession
+    private readonly WorkSession workSession = new WorkSession
     {
         StartTime = DateTime.Today.AddHours(11),
         EndTime = DateTime.Today.AddHours(14)
@@ -60,12 +63,6 @@
         {
             workSession.UserId = objectId;
         }
-        await LoadUserSessions();
-    }
-
-    private async Task OnUserIdChanged(ChangeEventArgs e)
-    {
-        workSession.UserId = e.Value?.ToString() ?? string.Empty;
         await LoadUserSessions();
     }
 
@@ -95,5 +92,16 @@
     private double GetSessionHours(DateTime start, DateTime end)
     {
         return (end - start).TotalHours;
+    }
+
+    private async Task DeleteSession(int sessionId)
+    {
+        var session = await Db.WorkSessions.FindAsync(sessionId);
+        if (session != null && session.UserId == workSession.UserId)
+        {
+            Db.WorkSessions.Remove(session);
+            await Db.SaveChangesAsync();
+            await LoadUserSessions();
+        }
     }
 }

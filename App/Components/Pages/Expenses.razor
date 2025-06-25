@@ -2,7 +2,6 @@
 <h3>Expenses</h3>
 
 @using Context
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject CafeContext Db
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
@@ -25,7 +24,7 @@
     <button type="submit" class="btn btn-primary">Add Expense</button>
 </EditForm>
 
-@if (userExpenses != null && userExpenses.Count > 0)
+@if (userExpenses.Count > 0)
 {
     <h4>Previous Expenses</h4>
     <table class="table">
@@ -34,6 +33,7 @@
                 <th>Date</th>
                 <th>Description</th>
                 <th>Total</th>
+                <th></th> <!-- New column for Delete button -->
             </tr>
         </thead>
         <tbody>
@@ -43,6 +43,9 @@
                     <td>@exp.CreatedAt.ToString("g")</td>
                     <td>@exp.Description</td>
                     <td>@exp.Total.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteExpense(exp.Id)">Delete</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -89,5 +92,16 @@
         await Db.SaveChangesAsync();
         expense = new Expense { UserId = expense.UserId, CreatedAt = DateTime.Now };
         await LoadUserExpenses();
+    }
+
+    private async Task DeleteExpense(int expenseId)
+    {
+        var exp = await Db.Expenses.FindAsync(expenseId);
+        if (exp != null && exp.UserId == expense.UserId)
+        {
+            Db.Expenses.Remove(exp);
+            await Db.SaveChangesAsync();
+            await LoadUserExpenses();
+        }
     }
 }
