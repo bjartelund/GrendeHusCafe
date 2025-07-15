@@ -1,0 +1,206 @@
+@page "/export"
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Context.CafeContext Db
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
+@using System.Text.Json.Serialization
+
+<h3>Export Data</h3>
+
+@if (isLoading)
+{
+    <p>Preparing your export...</p>
+}
+else if (!string.IsNullOrEmpty(downloadUrl))
+{
+    <a class="btn btn-primary" href="@downloadUrl" download="export.json">Download Exported Data</a>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <button class="btn btn-success" @onclick="ExportData">Export All My Data</button>
+    <button class="btn btn-secondary" @onclick="ExportOrdersCsv">Export Orders as CSV</button>
+    <button class="btn btn-info ms-2" @onclick="ExportWorkSessionsCsv">Export WorkSessions as CSV</button>
+    <button class="btn btn-warning ms-2" @onclick="ExportExpensesCsv">Export Expenses as CSV</button>
+}
+
+@code {
+    private bool isLoading;
+    private string? downloadUrl;
+    private string? errorMessage;
+    private string? csvDownloadUrl;
+    private bool isCsvLoading;
+    private string? workSessionsCsvDownloadUrl;
+    private bool isWorkSessionsCsvLoading;
+    private string? expensesCsvDownloadUrl;
+    private bool isExpensesCsvLoading;
+
+    private async Task ExportData()
+    {
+        isLoading = true;
+        errorMessage = null;
+        downloadUrl = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdString = await AuthHelper.GetUserId(Task.FromResult(authState));
+            if (!Guid.TryParse(userIdString, out var userId))
+            {
+                errorMessage = "Invalid user ID.";
+                isLoading = false;
+                return;
+            }
+            // Query all user data
+            var products = await Db.Products.Where(p => p.UserId == userId).ToListAsync();
+            var orders = await Db.Orders.Where(o => o.UserId == userId).ToListAsync();
+            var orderIds = orders.Select(o => o.Id).ToList();
+            var orderItems = await Db.OrderItems.Where(oi => orderIds.Contains(oi.OrderId)).ToListAsync();
+            var workSessions = await Db.WorkSessions.Where(ws => ws.UserId == userIdString).ToListAsync();
+            var expenses = await Db.Expenses.Where(e => e.UserId == userIdString).ToListAsync();
+
+            var export = new
+            {
+                Products = products,
+                Orders = orders,
+                OrderItems = orderItems,
+                WorkSessions = workSessions,
+                Expenses = expenses
+            };
+            var json = JsonSerializer.Serialize(export, new JsonSerializerOptions { WriteIndented = true, ReferenceHandler = ReferenceHandler.Preserve });
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var base64 = Convert.ToBase64String(bytes);
+            downloadUrl = $"data:application/json;base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        isLoading = false;
+    }
+
+    private async Task ExportOrdersCsv()
+    {
+        isCsvLoading = true;
+        errorMessage = null;
+        csvDownloadUrl = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdString = await AuthHelper.GetUserId(Task.FromResult(authState));
+            if (!Guid.TryParse(userIdString, out var userId))
+            {
+                errorMessage = "Invalid user ID.";
+                isCsvLoading = false;
+                return;
+            }
+            var orders = await Db.Orders.Where(o => o.UserId == userId).ToListAsync();
+            var orderIds = orders.Select(o => o.Id).ToList();
+            var orderItems = await Db.OrderItems.Where(oi => orderIds.Contains(oi.OrderId)).ToListAsync();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("CreatedAt;TotalOrderPrice");
+            foreach (var order in orders)
+            {
+                var total = orderItems.Where(oi => oi.OrderId == order.Id).Sum(oi => oi.Quantity * oi.UnitPrice);
+                csv.AppendLine($"{order.CreatedAt:O};{total}");
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            var base64 = Convert.ToBase64String(bytes);
+            csvDownloadUrl = $"data:text/csv;base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        isCsvLoading = false;
+    }
+
+    private async Task ExportWorkSessionsCsv()
+    {
+        isWorkSessionsCsvLoading = true;
+        errorMessage = null;
+        workSessionsCsvDownloadUrl = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdString = await AuthHelper.GetUserId(Task.FromResult(authState));
+            // WorkSession.UserId is string, not Guid
+            var workSessions = await Db.WorkSessions.Where(ws => ws.UserId == userIdString).ToListAsync();
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("StartTime;EndTime;DurationHours");
+            foreach (var ws in workSessions)
+            {
+                var duration = (ws.EndTime - ws.StartTime).TotalHours;
+                csv.AppendLine($"{ws.StartTime:O};{ws.EndTime:O};{duration.ToString(CultureInfo.CurrentCulture)}");
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            var base64 = Convert.ToBase64String(bytes);
+            workSessionsCsvDownloadUrl = $"data:text/csv;base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        isWorkSessionsCsvLoading = false;
+    }
+
+    private async Task ExportExpensesCsv()
+    {
+        isExpensesCsvLoading = true;
+        errorMessage = null;
+        expensesCsvDownloadUrl = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdString = await AuthHelper.GetUserId(Task.FromResult(authState));
+            var expenses = await Db.Expenses.Where(e => e.UserId == userIdString).ToListAsync();
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("CreatedAt;Total;Description");
+            foreach (var exp in expenses)
+            {
+                // Escape description for CSV
+                var desc = exp.Description.Replace("\"", "\"\"");
+                if (desc.Contains(';') || desc.Contains('"') || desc.Contains('\n'))
+                    desc = $"\"{desc}\"";
+                csv.AppendLine($"{exp.CreatedAt:O};{exp.Total.ToString(CultureInfo.CurrentCulture)};{desc}");
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            var base64 = Convert.ToBase64String(bytes);
+            expensesCsvDownloadUrl = $"data:text/csv;base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        isExpensesCsvLoading = false;
+    }
+}
+@if (isCsvLoading)
+{
+    <p>Preparing your CSV export...</p>
+}
+else if (!string.IsNullOrEmpty(csvDownloadUrl))
+{
+    <a class="btn btn-primary" href="@csvDownloadUrl" download="orders.csv">Download Orders CSV</a>
+}
+@if (isWorkSessionsCsvLoading)
+{
+    <p>Preparing your WorkSessions CSV export...</p>
+}
+else if (!string.IsNullOrEmpty(workSessionsCsvDownloadUrl))
+{
+    <a class="btn btn-primary" href="@workSessionsCsvDownloadUrl" download="work_sessions.csv">Download WorkSessions CSV</a>
+}
+@if (isExpensesCsvLoading)
+{
+    <p>Preparing your Expenses CSV export...</p>
+}
+else if (!string.IsNullOrEmpty(expensesCsvDownloadUrl))
+{
+    <a class="btn btn-primary" href="@expensesCsvDownloadUrl" download="expenses.csv">Download Expenses CSV</a>
+}
